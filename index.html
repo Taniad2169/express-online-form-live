@@ -50,6 +50,15 @@
       border-bottom: 2px solid #000;
       text-transform: uppercase;
     }
+    /* Highlight last section title in yellow */
+    .section-title.highlight-yellow {
+      background-color: yellow;
+      color: #000;
+      border-radius: 5px;
+      padding: 8px;
+      display: inline-block;
+      margin: 0 auto 20px auto;
+    }
     .form-group {
       margin-bottom: 15px;
       display: flex;
@@ -294,7 +303,6 @@
       <h1>EXPRESS CAPITAL NETWORK ASSOCIATES</h1>
     </div>
     <p class="note">Please note, also send previous four months bank statement with completed application.</p>
-
     <!-- Application Form (index.html) -->
     <form id="loanApplicationForm" method="post" action="submit-application.php">
       <div class="section-title">BUSINESS INFORMATION</div>
@@ -464,7 +472,6 @@
         <label for="partnerCellNumber1">Cell Number:</label>
         <input type="tel" id="partnerCellNumber1" name="partnerCellNumber1">
       </div>
-
       <div class="footer-disclaimer">
         <p>
           By signing above, each of the above listed business and business owner/officer (individually and collectively, “you”) authorize Express Capital Network Associates and its agents, banks or financial institutions to obtain an investigative or consumer report from a credit bureau or a credit agency and to investigate the references given on any other statements or data obtained from applicant. You also authorize Express Capital Network Associates to transmit this application form, with any of the foregoing information obtained in connection with this application, to any or all of the Recipients for the foregoing purposes. You also consent to the release, by any creditor or financial institution, of any information relating to any of you, to Express Capital Network Associates and to each of the Recipients, on its own behalf. I am providing my business cell-phone and business e-mail address and hereby consent to the receipt of correspondence/messages regarding transactions with Express Capital Network Associates and/or its affiliates on either medium. I certify that all the information contained herein is complete, true and accurate.
@@ -474,28 +481,26 @@
           <div></div>
         </div>
       </div>
-
       <div class="section-break" id="additional-documents">
         <span>Additional Documents</span>
       </div>
       <div class="fax-header"><strong>Fax your document to:</strong> (646) 448-8202</div>
-      <div class="section-title">Additional Documents Required</div>
+      <div class="section-title highlight-yellow" id="additional-documents-required">Additional Documents Required</div>
       <div class="checkboxes">
         <label><input type="checkbox" /> 4 recent months of business bank statements</label>
         <label><input type="checkbox" /> Copy of drivers license</label>
         <label><input type="checkbox" /> Voided business check</label>
       </div>
-
       <!-- BUTTONS: Placed after the Additional Documents Required section as requested -->
       <div class="buttons">
         <button type="submit" form="loanApplicationForm">Submit Application</button>
         <button type="button" onclick="window.print()">Print Form</button>
-        <button type="button" id="pdfBtn">Download as PDF</button>
+        <button type="button" id="pdfBtn">Download filled PDF</button>
+        <button type="button" id="blankPdfBtn">Download blank PDF</button>
       </div>
-
       <div style="text-align:center; margin-top:0px; margin-bottom:0;">
         <small>
-          To email your completed application, first download as PDF, then attach the file to your email to: 
+          To email your completed application, first download as PDF, then attach the file to your email to:
           <a href="mailto:franz@expresscapitalassociate.com">franz@expresscapitalassociate.com</a>
         </small>
       </div>
@@ -506,12 +511,31 @@
   </div>
   <script>
     document.getElementById('pdfBtn').addEventListener('click', function() {
-      generatePdf();
+      generatePdf(false); // filled form
     });
-    function generatePdf() {
+    document.getElementById('blankPdfBtn').addEventListener('click', function() {
+      generatePdf(true); // blank form
+    });
+
+    function generatePdf(isBlank) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-      function val(id) { let el = document.getElementById(id); return el ? el.value : ''; }
+
+      function val(id) {
+        if (isBlank) return '';
+        let el = document.getElementById(id);
+        return el ? el.value : '';
+      }
+      let getCheckedValue = (name) => {
+        if (isBlank) return '';
+        let el = document.querySelector('input[name="' + name + '"]:checked');
+        return el ? el.value : '';
+      };
+      let getCheckedBoxes = (name) => {
+        if (isBlank) return '';
+        return Array.from(document.querySelectorAll('input[name="' + name + '"]:checked')).map(c=>c.value).join(", ");
+      };
+
       let y = 40;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(16);
@@ -532,16 +556,13 @@
       doc.text(`Telephone Number: ${val('telephoneNumber')}`, 40, y); y += 16;
       doc.text(`Federal Tax ID: ${val('federalTaxId')}`, 40, y); y += 16;
       doc.text(`Date Business Started: ${val('dateBusinessStarted')}`, 40, y); y += 16;
-      // Length of Ownership REMOVED
       doc.text(`Website: ${val('website_unique')}`, 40, y); y += 16;
-      doc.text(`Type of Entity: ${document.querySelector('input[name="entityType"]:checked') ? document.querySelector('input[name="entityType"]:checked').value : ''}`, 40, y); y += 16;
+      doc.text(`Type of Entity: ${getCheckedValue('entityType')}`, 40, y); y += 16;
       doc.text(`Email Address: ${val('emailAddress')}`, 40, y); y += 16;
-      let bizTypes = Array.from(document.querySelectorAll('input[name="businessType"]:checked')).map(c=>c.value).join(", ");
-      doc.text(`Type of Business: ${bizTypes}`, 40, y); y += 16;
+      doc.text(`Type of Business: ${getCheckedBoxes('businessType')}`, 40, y); y += 16;
       doc.text(`Product/Service Sold: ${val('productServiceSold')}`, 40, y); y += 16;
       doc.text(`Monthly Gross Income: $${val('monthlyGrossIncome')}`, 40, y); y += 16;
       doc.text(`Funding Amount Request: $${val('fundingAmountRequest')}`, 40, y); y += 24;
-
       doc.setFont(undefined, "bold");
       doc.text("MERCHANT/OWNER INFORMATION", 40, y); y += 18;
       doc.setFont(undefined, "normal");
@@ -554,7 +575,6 @@
       doc.text(`Date of Birth: ${val('ownerDob')}`, 40, y); y += 16;
       doc.text(`FICO Score: ${val('ownerFicoScore')}`, 40, y); y += 16;
       doc.text(`Cell Number: ${val('ownerCellNumber')}`, 40, y); y += 24;
-
       doc.setFont(undefined, "bold");
       doc.text("PARTNER INFORMATION", 40, y); y += 18;
       doc.setFont(undefined, "normal");
@@ -568,9 +588,15 @@
       doc.text(`FICO Score: ${val('partnerFicoScore1')}`, 40, y); y += 16;
       doc.text(`Cell Number: ${val('partnerCellNumber1')}`, 40, y); y += 24;
 
+      // Highlight last section title
+      doc.setFontSize(14);
+      doc.setTextColor(255, 0, 0); // RED FONT for "Additional Documents Required" if yellow highlight not supported
       doc.setFont(undefined, "bold");
-      doc.text("Additional Documents Required", 40, y); y += 18;
+      doc.text("Additional Documents Required", 40, y, {align: "left"});
+      doc.setFontSize(12);
       doc.setFont(undefined, "normal");
+      doc.setTextColor(0,0,0);
+      y += 18;
       doc.text("Attach the following (check if included):", 40, y); y += 16;
       doc.text("[ ] 4 recent months of business bank statements", 50, y); y += 14;
       doc.text("[ ] Copy of driver's license", 50, y); y += 14;
@@ -581,7 +607,12 @@
       doc.setFont(undefined, "normal");
       doc.text("Signature: _____________________________", 40, y); 
       doc.text("Date: ___________________", 300, y);
-      doc.save("Express_Capital_Network_Application.pdf");
+
+      doc.save(
+        isBlank
+          ? "Express_Capital_Network_Application_Blank.pdf"
+          : "Express_Capital_Network_Application.pdf"
+      );
     }
   </script>
 </body>
